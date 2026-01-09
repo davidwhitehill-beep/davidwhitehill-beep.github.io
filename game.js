@@ -106,7 +106,7 @@
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start(now);
-    osc.stop(now + 0.12);
+    osc.stop(now + 0.52);
   }
 
 
