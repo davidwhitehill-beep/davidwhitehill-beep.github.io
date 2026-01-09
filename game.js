@@ -13,7 +13,7 @@
   // --- Audio ---
   // Browser rules require a user gesture before audio can reliably play.
   // We enable audio after the player presses Play.
-  let audioEnabled = false;
+  let audioEnabled = true;
 
   const SFX = {
     // special match SFX (played on combos or 4+ matches)
