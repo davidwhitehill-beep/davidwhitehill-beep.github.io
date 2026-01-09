@@ -63,7 +63,7 @@
   }
 
 
-(function disableDoubleTapZoomSafari()
+function disableDoubleTapZoomSafari()
 {
   let lastTouchEnd = 0;
 
@@ -74,7 +74,20 @@
       }
     lastTouchEnd = now;
   }, { passive: false });
-})();
+};
+
+
+function disableDoubleTapZoomOnBoard(boardEl){
+  let lastTap = 0;
+  boardEl.addEventListener("touchend", (e) => {
+    const now = Date.now();
+    if (now - lastTap < 250) {
+      e.preventDefault(); // only affects the board
+    }
+    lastTap = now;
+  }, { passive: false });
+}
+
 
   function ensureAudioContext(){
     if(!audioCtx){
@@ -174,9 +187,6 @@
   const howBtn = document.getElementById("howBtn");
   const titleHotspot = document.getElementById("titlePlayHotspot");
   const titleImage = document.querySelector(".title-image");
-
-  
-
 
   const toastEl = document.getElementById("toast");
   let toastTimer = null;
@@ -437,12 +447,17 @@ document.documentElement.style.setProperty("--cols", COLS);
     for(const key of clearSet){
       const [r,c] = key.split(",").map(Number);
       const tileEl = getTileEl(r,c);
-      if(tileEl){
-        tileEl.classList.remove("clearing");
-        void tileEl.offsetWidth;
-        tileEl.classList.add("clearing");
-      }
+      if(tileEl)  tileEl.classList.remove("clearing");
+       
     }
+
+	requestAnimationFrame(() => {
+	  for (const key of clearSet) {
+	    const [r,c] = key.split(",").map(Number);
+ 	   const tileEl = getTileEl(r,c);
+	    if (tileEl) tileEl.classList.add("clearing");
+	  }
+	});
 
     await sleep(260);
 
@@ -939,6 +954,7 @@ async function resolveBoardAfterSwap(swapInfo){
     restart();
   }
 
+  disableDoubleTapZoomOnBoard(boardEl);
   startBtn.addEventListener("click", startGame);
   titleHotspot.addEventListener("click", startGame);
   if(titleImage) titleImage.addEventListener("click", startGame);

@@ -34,7 +34,7 @@
       overflow:hidden;
       -webkit-tap-highlight-color: transparent;
       user-select:none;
-      touch-action: none;
+
     }
     .sparkles{
       position:fixed; inset:-40px;
@@ -53,8 +53,8 @@
     }
     @keyframes drift{ from{ transform:translateY(0);} to{ transform:translateY(40px);} }
 
-    .app{ width:min(980px, 100%); display:grid; grid-template-columns: 1fr; gap: 6px; position:relative; z-index:1; touch-action: none;}
-    .topbar{ display:flex; gap:6px; align-items:stretch; justify-content:start; flex-wrap:wrap;touch-action: none;  
+    .app{ width:min(980px, 100%); display:grid; grid-template-columns: 1fr; gap: 6px; position:relative; z-index:1;}
+    .topbar{ display:flex; gap:6px; align-items:stretch; justify-content:start; flex-wrap:wrap;  
           }
 
     .panel{
@@ -63,15 +63,15 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       backdrop-filter: blur(8px);
-      touch-action: none;
+
     }
 
-    .hud{ display:flex; align-items:center; gap: 12px; padding: 12px 14px; flex: 1; min-width: 260px;touch-action: none;}
+    .hud{ display:flex; align-items:center; gap: 12px; padding: 12px 14px; flex: 1; min-width: 260px;}
     .hud h1{
       margin:0; font-size: 24px; letter-spacing:.4px; font-weight: 1600;
       color: #3399ff; text-shadow: 22 22 8 yellow; white-space:nowrap;
     }
-    .hud .meta{ display:flex; align-items:flex-end; gap: 10px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end;touch-action: none;}
+    .hud .meta{ display:flex; align-items:flex-end; gap: 10px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end;}
     .pill{
       display:flex; gap:8px; align-items:center; padding: 8px 10px; border-radius: 999px;
       background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.10);
@@ -97,18 +97,18 @@
     .btn:active{ transform: translateY(1px) scale(.99); }
     .btn.secondary{ background: linear-gradient(#3f5660, #2b3e46); }
 
-    .board-wrap{ display:grid; grid-template-columns: 1fr; gap: 2px; padding: 2px; position:relative; overflow:hidden;touch-action: none;place-items: center; }
+    .board-wrap{ display:grid; grid-template-columns: 1fr; gap: 2px; padding: 2px; position:relative; overflow:hidden;place-items: center; }
 
     .board-wrap::before{
       content:""; position:absolute; inset:0;
-      opacity:.35; filter: saturate(1.1) contrast(2.05); transform: scale(1.03);touch-action: none;
+      opacity:.35; filter: saturate(1.1) contrast(2.05); transform: scale(1.03);
     }
 
     .board-wrap::after{
       content:""; position:absolute; inset:0;
       background: radial-gradient(900px 520px at 50% 10%, rgba(255,215,120,.20), transparent 55%),
                   linear-gradient(to bottom, rgba(0,0,0,.08), rgba(0,0,0,.30));
-      pointer-events:none;place-items: center; touch-action: none;
+      pointer-events:none;place-items: center; 
     }
 
     .board{
@@ -127,7 +127,6 @@
       position:relative; display:grid; place-items:center;
       background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
       overflow:hidden;
-      touch-action: none;
     }
 
     .tile{
