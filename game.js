@@ -137,7 +137,7 @@ function disableDoubleTapZoomOnBoard(boardEl){
 
   function playGezint(force=true){ 
     setTimeout(() => {
-       playAudio(oyveyAudio); 
+       playAudio(gezintAudio); 
      }, 2000);
 
   }
