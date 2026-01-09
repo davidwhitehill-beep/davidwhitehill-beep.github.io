@@ -1,5 +1,5 @@
 (() => {
-  const ROWS = 9;
+  const ROWS = 8;
   const COLS = 7;
 
   const ICON_TYPES = 12;
