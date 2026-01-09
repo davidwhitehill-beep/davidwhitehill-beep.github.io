@@ -155,6 +155,7 @@ function disableDoubleTapZoomOnBoard(boardEl){
       playTone();
     }
   }
+  
 // Each game uses 8 icon types (picked randomly at restart).
   const ACTIVE_ICON_COUNT = 8;
   let activeTypes = []; // array of type ids (0..ICON_TYPES-1)
@@ -241,7 +242,6 @@ document.documentElement.style.setProperty("--cols", COLS);
   }
 
  function checkMilestone(prevScore){
-  if (milestoneShown) return;
 
   if (prevScore < 1800 && score >= 1800){
     milestoneShown = true;
