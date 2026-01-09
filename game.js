@@ -248,9 +248,10 @@ document.documentElement.style.setProperty("--cols", COLS);
 
     if (milestoneEl){
       milestoneEl.style.display = "grid";
-    }
+
 
     playGezint(); // 🔊 plays exactly once
+    }
   }
 }
 
