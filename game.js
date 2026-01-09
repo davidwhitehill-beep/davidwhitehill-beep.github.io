@@ -13,7 +13,7 @@
   // --- Audio ---
   // Browser rules require a user gesture before audio can reliably play.
   // We enable audio after the player presses Play.
-  let audioEnabled = true;
+  let audioEnabled = false;
 
   const SFX = {
     // special match SFX (played on combos or 4+ matches)
@@ -74,7 +74,7 @@ function disableDoubleTapZoomSafari()
       }
     lastTouchEnd = now;
   }, { passive: false });
-};
+}
 
 
 function disableDoubleTapZoomOnBoard(boardEl){
