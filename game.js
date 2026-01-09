@@ -137,7 +137,7 @@ function disableDoubleTapZoomOnBoard(boardEl){
 
   function playGezint(force=true){ 
     setTimeout(() => {
-       playAudio(gezintAudio, force); 
+       playAudio(gezintAudio); 
      }, 2000);
 
   }
@@ -243,7 +243,7 @@ document.documentElement.style.setProperty("--cols", COLS);
 
  function checkMilestone(prevScore){
 
-  if (prevScore < 1800 && score >= 1800){
+  if (prevScore < 100 && score >= 100){
     milestoneShown = true;
 
     if (milestoneEl){
