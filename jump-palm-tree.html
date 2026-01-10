@@ -39,10 +39,14 @@
   const groundY = Math.floor(H * 0.80);
 
   // Physics / difficulty
-  const gravity = 2400;      // px/s^2
-  const jumpVel = -900;      // px/s
-  const baseSpeed = 420;     // px/s
-  const speedRamp = 0.02;    // speed multiplier per score
+  const gravity = 2400;          // px/s^2
+  const jumpVel = -1080;         // HIGHER jump (was -900)
+  const baseSpeed = 420;         // px/s
+  const speedRamp = 0.02;        // speed multiplier per score
+
+  // Tree spacing: farther apart
+  const minGapSec = 1.35;        // was 0.9
+  const maxGapSec = 2.10;        // was 1.6
 
   let running = false;
   let crashed = false;
@@ -51,7 +55,7 @@
 
   let tPrev = null;
   let spawnTimer = 0;
-  let nextSpawn = rand(0.9, 1.6);
+  let nextSpawn = rand(minGapSec, maxGapSec);
 
   const player = {
     x: Math.floor(W * 0.18),
@@ -67,6 +71,101 @@
 
   function rand(a,b){ return a + Math.random()*(b-a); }
 
+  // ---------------------------
+  // Vibraphone-ish jump sound
+  // ---------------------------
+  let audioCtx = null;
+  let masterGain = null;
+
+  function ensureAudio() {
+    if (audioCtx) return;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    audioCtx = new Ctx();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.25; // overall volume
+    masterGain.connect(audioCtx.destination);
+  }
+
+  function playVibe() {
+    if (!audioCtx || audioCtx.state === "suspended") {
+      // will resume on next user gesture; fail softly
+      return;
+    }
+
+    const now = audioCtx.currentTime;
+
+    // Random pitch (musical-ish): pick from a pentatonic-ish set, then transpose
+    const baseNotes = [0, 3, 4, 6, 9]; // minor pentatonic offsets
+    const n = baseNotes[(Math.random() * baseNotes.length) | 0];
+    const octave = (Math.random() < 0.75) ? 0 : 12; // mostly same octave
+    const detune = rand(-82, 82); // slight randomness in cents
+    const midi = 60 + n + octave; // around C5-ish
+    const freq = 440 * Math.pow(2, (midi - 69) / 12);
+
+    // Carrier (sine) + a soft "strike" partial to fake vibraphone
+    const osc1 = audioCtx.createOscillator();
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(freq, now);
+    osc1.detune.setValueAtTime(detune, now);
+
+    const osc2 = audioCtx.createOscillator();
+    osc2.type = "sine";
+    osc2.frequency.setValueAtTime(freq * 2.01, now); // slight inharmonicity
+    osc2.detune.setValueAtTime(detune * 0.6, now);
+
+    // Tremolo (vibraphone motor-ish)
+    const trem = audioCtx.createOscillator();
+    trem.type = "sine";
+    trem.frequency.setValueAtTime(rand(5.0, 7.5), now); // slow wobble
+
+    const tremDepth = audioCtx.createGain();
+    tremDepth.gain.setValueAtTime(0.18, now); // depth of tremolo
+
+    // Envelope
+    const amp = audioCtx.createGain();
+    amp.gain.setValueAtTime(0.0001, now);
+    amp.gain.exponentialRampToValueAtTime(0.85, now + 0.008);   // fast attack
+    amp.gain.exponentialRampToValueAtTime(0.18, now + 0.14);    // quick decay
+    amp.gain.exponentialRampToValueAtTime(0.0001, now + 0.65);  // long-ish tail
+
+    // Brightness shaping
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(3200, now);
+    filter.Q.setValueAtTime(0.7, now);
+
+    // Mix: osc1 dominates, osc2 adds shimmer
+    const mix1 = audioCtx.createGain(); mix1.gain.value = 1.0;
+    const mix2 = audioCtx.createGain(); mix2.gain.value = 0.35;
+
+    // Tremolo routing: trem -> tremDepth -> amp.gain (additive)
+    const tremAdd = audioCtx.createGain();
+    tremAdd.gain.value = 1.0;
+
+    trem.connect(tremDepth);
+    tremDepth.connect(tremAdd);
+    tremAdd.connect(amp.gain);
+
+    osc1.connect(mix1);
+    osc2.connect(mix2);
+    mix1.connect(filter);
+    mix2.connect(filter);
+    filter.connect(amp);
+    amp.connect(masterGain);
+
+    osc1.start(now);
+    osc2.start(now);
+    trem.start(now);
+
+    const stopAt = now + 0.72;
+    osc1.stop(stopAt);
+    osc2.stop(stopAt);
+    trem.stop(stopAt);
+  }
+
+  // ---------------------------
+
   function reset(startRunning) {
     player.y = groundY;
     player.vy = 0;
@@ -80,7 +179,7 @@
     score = 0;
 
     spawnTimer = 0;
-    nextSpawn = rand(0.9, 1.6);
+    nextSpawn = rand(minGapSec, maxGapSec);
   }
 
   function startIfNeeded() {
@@ -91,16 +190,29 @@
   function jump() {
     startIfNeeded();
     if (crashed) return;
+
     if (player.onGround) {
       player.vy = jumpVel;
       player.onGround = false;
+      playVibe();
     }
   }
 
   // Input
-  canvas.addEventListener("pointerdown", (e) => { e.preventDefault(); jump(); }, { passive:false });
+  canvas.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    ensureAudio();
+    if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    jump();
+  }, { passive:false });
+
   window.addEventListener("keydown", (e) => {
-    if (e.code === "Space" || e.code === "ArrowUp") { e.preventDefault(); jump(); }
+    if (e.code === "Space" || e.code === "ArrowUp") {
+      e.preventDefault();
+      ensureAudio();
+      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+      jump();
+    }
   }, { passive:false });
 
   // Prevent iOS double-tap zoom
@@ -165,11 +277,11 @@
       player.onGround = true;
     }
 
-    // spawn palms
+    // spawn palms (farther apart now)
     spawnTimer += dt;
     if (spawnTimer >= nextSpawn) {
       spawnTimer = 0;
-      nextSpawn = rand(0.9, 1.6);
+      nextSpawn = rand(minGapSec, maxGapSec);
       spawnPalm();
     }
 
@@ -253,7 +365,7 @@
     // shadow
     ctx.fillStyle = "rgba(0,0,0,0.22)";
     ctx.beginPath();
-    ctx.ellipse(0, 10, 24, player.onGround ? 10 : 7, 0, 0, Math.PI*2);
+    ctx.ellipse(0, player.onGround ? 10 : 450-player.y, 24, player.onGround ? 10 : 7, 0, 0, Math.PI*2);
     ctx.fill();
 
     // body
@@ -262,19 +374,39 @@
 
     // torso
     ctx.fillStyle = "#1b1b24";
-    roundRect(-18, -14, 36, 30, 10);
+    roundRect(-18, -24, 36, 40, 10);
     ctx.fill();
+
+    ctx.font = "12px sans-serif";    
+    ctx.fillStyle = "yellow";
+    ctx.fillText("Zollie", -12, -2)
+    //ctx.fill();
 
     // head
     ctx.fillStyle = "#ffd2b3";
     ctx.beginPath();
-    ctx.arc(0, -24, 13, 0, Math.PI*2);
+    ctx.arc(0, -34, 13, 0, Math.PI*2);
     ctx.fill();
 
-    // eye
-    ctx.fillStyle = "#111";
+    // eyes
+    ctx.fillStyle = "white";
     ctx.beginPath();
-    ctx.arc(4, -26, 2, 0, Math.PI*2);
+    ctx.arc(1, -36, 8, 0, Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(8, -36, 8, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = "blue";
+    ctx.beginPath();
+    ctx.arc(12, -36, 4, 0, Math.PI*2);
+    ctx.fill();
+     ctx.beginPath();
+    ctx.arc(3, -36, 4, 0, Math.PI*2);
+    ctx.fill();
+
+     ctx.fillStyle = "gold";
+    roundRect(-4, -50, 26, 6, 10);
     ctx.fill();
 
     // legs
