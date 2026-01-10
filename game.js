@@ -936,6 +936,7 @@ async function resolveBoardAfterSwap(swapInfo){
     score = 0;
     moves = 0;
     shufflesLeft = MAX_SHUFFLES;
+    audioEnabled = true;
     noMoves = false;
     noMovesMessageShown = false;
     updateHud();
