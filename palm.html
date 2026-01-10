@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Jump Palm Tree</title>
+  <style>
+    html, body { margin:0; padding:0; height:100%; background:#0b1220; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    .wrap {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    canvas {
+      width: min(900px, 96vw);
+      height: auto;
+      aspect-ratio: 16 / 9;
+      border-radius: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      background: #79c8ff;
+      touch-action: manipulation; /* helps prevent double-tap zoom issues */
+    }
+    .hint {
+      color: rgba(255,255,255,.75);
+      font-size: 14px;
+      margin-top: 10px;
+      text-align: center;
+      line-height: 1.4;
+    }
+    .hint b { color: rgba(255,255,255,.92); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div>
+      <canvas id="game" width="960" height="540" aria-label="Jump Palm Tree"></canvas>
+      <div class="hint">
+        Tap / Click to jump • <b>Space</b> to jump • Avoid the palm trees • Tap again after a crash to restart
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+
+      // HiDPI crispness
+      function fitHiDPI() {
+        const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+        const cssW = canvas.getBoundingClientRect().width;
+        const cssH = canvas.getBoundingClientRect().height;
+        canvas.width = Math.round(cssW * dpr);
+        canvas.height = Math.round(cssH * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS pixels
+      }
+      // Set an initial CSS size consistent with aspect ratio
+      // (the CSS already enforces aspect-ratio; this is just to ensure rect is known)
+      requestAnimationFrame(() => {
+        fitHiDPI();
+        reset(true);
+        requestAnimationFrame(loop);
+      });
+      window.addEventListener("resize", () => {
+        fitHiDPI();
+      });
+
+      // World in CSS pixels (we draw in CSS pixels because of ctx.setTransform above)
+      function W() { return canvas.getBoundingClientRect().width; }
+      function H() { return canvas.getBoundingClientRect().height; }
+
+      // Game state
+      const groundFrac = 0.80;       // ground Y as fraction of height
+      const gravity = 2400;          // px/s^2
+      const jumpVel = -900;          // px/s
+      const minPalmGap = 1.0;        // seconds between palms (min)
+      const maxPalmGap = 1.7;        // seconds between palms (max)
+      const baseSpeed = 420;         // px/s initial scroll speed
+      const speedRamp = 6;           // px/s increase per second (gentle difficulty)
+      const palmWidth = 58;          // trunk+fronds collision width area (approx)
+      const palmHitPad = 6;          // padding to make collision feel fair
+
+      let player, palms, clouds, sandOffset;
+      let running = false;
+      let crashed = false;
+      let score = 0;
+      let best = 0;
+      let tPrev = null;
+      let spawnTimer = 0;
+      let nextSpawnIn = rand(minPalmGap, maxPalmGap);
+
+      function reset(first=false) {
+        const w = W(), h = H();
+        const groundY = h * groundFrac;
+
+        player = {
+          x: w * 0.18,
+          y: groundY,
+          w: 42,
+          h: 52,
+          vy: 0,
+          onGround: true
+        };
+
+        palms = [];
+        clouds = [];
+        sandOffset = 0;
+
+        // seed clouds
+        for (let i = 0; i < 6; i++) {
+          clouds.push({
+            x: rand(0, w),
+            y: rand(h*0.08, h*0.38),
+            r: rand(18, 40),
+            s: rand(12, 26)
+          });
+        }
+
+        running = first ? false : true;
+        crashed = false;
+        score = 0;
+        spawnTimer = 0;
+        nextSpawnIn = rand(minPalmGap, maxPalmGap);
+      }
+
+      function rand(a,b){ return a + Math.random()*(b-a); }
+
+      function startIfNeeded() {
+        if (!running && !crashed) running = true;
+        if (crashed) reset(false);
+      }
+
+      function jump() {
+        startIfNeeded();
+        if (crashed) return;
+        if (player.onGround) {
+          player.vy = jumpVel;
+          player.onGround = false;
+        }
+      }
+
+      // Input: pointer + keyboard
+      canvas.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        jump();
+      }, { passive: false });
+
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "Space" || e.code === "ArrowUp") {
+          e.preventDefault();
+          jump();
+        }
+        if (e.code === "Enter") {
+          e.preventDefault();
+          if (crashed) reset(false);
+          else running = !running;
+        }
+      }, { passive: false });
+
+      // Prevent iOS double-tap zoom on canvas area
+      let lastTouchEnd = 0;
+      document.addEventListener("touchend", function(e){
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) e.preventDefault();
+        lastTouchEnd = now;
+      }, { passive: false });
+
+      function spawnPalm() {
+        const w = W(), h = H();
+        const groundY = h * groundFrac;
+
+        const trunkH = rand(h*0.18, h*0.28);
+        const frondR = rand(26, 34);
+
+        palms.push({
+          x: w + 40,
+          y: groundY,
+          trunkH,
+          frondR,
+          w: palmWidth
+        });
+      }
+
+      function playerRect() {
+        // A slightly inset hitbox feels better than full sprite
+        return {
+          x: player.x + 6,
+          y: player.y - player.h + 6,
+          w: player.w - 12,
+          h: player.h - 10
+        };
+      }
+
+      function palmRect(p) {
+        // Approximate palm collision as a rectangle around trunk area up to fronds
+        // This is simple and consistent for a runner game.
+        const trunkW = 18;
+        const topY = p.y - p.trunkH - p.frondR*0.7;
+        return {
+          x: p.x - trunkW/2 - palmHitPad,
+          y: topY - palmHitPad,
+          w: trunkW + palmHitPad*2,
+          h: (p.y - topY) + palmHitPad*2
+        };
+      }
+
+      function intersects(a,b) {
+        return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a
