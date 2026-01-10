@@ -46,7 +46,7 @@
   const gravity = 2400;          // px/s^2
   const jumpVel = -1080;         // HIGHER jump (was -900)
   const baseSpeed = 420;         // px/s
-  const speedRamp = 0.02;        // speed multiplier per score
+  const speedRamp = 0.05;        // speed multiplier per score
 
   // Tree spacing: farther apart
   const minGapSec = 1.35;        // was 0.9
@@ -296,7 +296,7 @@
       const p = palms[i];
       if (!p.passed && p.x < player.x - 10) {
         p.passed = true;
-        score += 10;
+        score += 1;
         best = Math.max(best, score);
       }
       if (p.x < -120) palms.splice(i, 1);
@@ -436,6 +436,48 @@
     }
   }
 
+  // Sprite support: optional sprite sheet for the player.
+  const playerSprite = new Image();
+  playerSprite.src = "ZollieSpriteSheet.png"; // place a sprite sheet here or change the path
+  const playerSpriteMeta = { frameW: 832/13, frameH: 3456/54, framesPerRow: 8, framesPerCol: 54, frames: 8 };
+
+  function drawPlayerSprite(img = playerSprite, meta = playerSpriteMeta, timeMs = performance.now()) {
+    if (!img || !img.complete) { drawPlayer(); return; }
+
+    ctx.save();
+    ctx.translate(player.x, player.y);
+
+    // shadow (same as drawPlayer)
+    const gradient = ctx.createRadialGradient(0, 0, 2, 0, 0, 24);
+
+    // Add three color stops
+    gradient.addColorStop(0, "grey");
+    gradient.addColorStop(1, "transparent");
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.ellipse(0, player.onGround ? 10 : 450-player.y, 24, player.onGround ? 10 : 7, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    const bob = player.onGround ? Math.sin(timeMs/80)*1.2 : 0;
+    const RowRun = 41;
+    const RowJump = 29;
+    const ColJump = 4;
+    const PlayerSize = 1.5;
+    ctx.translate(0, -player.h/2 + bob);
+
+    // choose frame: animate while on ground, use a mid frame while airborne
+    const frameCount = meta.frames || (Math.floor(img.width / meta.frameW) * Math.floor(img.height / meta.frameH));
+    const frame = player.onGround ? Math.floor((timeMs/120) % frameCount) : ColJump;
+    const fx = frame % meta.framesPerRow;
+    const fy = player.onGround ? RowRun : RowJump;
+    const sx = fx * meta.frameW;
+    const sy = (fy+.05) * meta.frameH;
+
+    ctx.drawImage(img, sx, sy, meta.frameW, meta.frameH, -meta.frameW/2*PlayerSize, -meta.frameH*PlayerSize/1.6, meta.frameW*PlayerSize, meta.frameH*PlayerSize);
+
+    ctx.restore();
+  }
+
   function overlay(title, subtitle) {
     ctx.fillStyle = "rgba(0,0,0,0.42)";
     ctx.fillRect(0, 0, W, H);
@@ -489,7 +531,7 @@
     for (const p of palms) drawPalm(p);
 
     // player
-    drawPlayer();
+    drawPlayerSprite();
 
     // HUD
     ctx.fillStyle = "rgba(0,0,0,0.40)";
