@@ -243,7 +243,7 @@ document.documentElement.style.setProperty("--cols", COLS);
 
  function checkMilestone(prevScore){
 
-  if (prevScore < 100 && score >= 100){
+  if (prevScore < 1800 && score >= 1800){
     milestoneShown = true;
 
     if (milestoneEl){
