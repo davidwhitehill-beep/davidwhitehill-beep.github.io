@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Jump Palm Tree</title>
+  <style>
+    html, body { margin:0; height:100%; background:#0b1220; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    .wrap { height:100%; display:grid; place-items:center; padding:16px; box-sizing:border-box; }
+    canvas {
+      width: min(900px, 96vw);
+      height: auto;
+      aspect-ratio: 16 / 9;
+      border-radius: 14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+      background: #79c8ff;
+      touch-action: manipulation;
+      display:block;
+    }
+    .hint { color: rgba(255,255,255,.75); font-size: 14px; margin-top: 10px; text-align:center; line-height:1.4; }
+    .hint b { color: rgba(255,255,255,.92); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div>
+      <canvas id="game" width="960" height="540"></canvas>
+      <div class="hint">Tap / Click to jump • <b>Space</b> to jump • Don’t bump into palm trees • Tap after crash to restart</div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  const W = canvas.width;
+  const H = canvas.height;
+  const groundY = Math.floor(H * 0.80);
+
+  // Physics / difficulty
+  const gravity = 2400;      // px/s^2
+  const jumpVel = -900;      // px/s
+  const baseSpeed = 420;     // px/s
+  const speedRamp = 0.02;    // speed multiplier per score
+
+  let running = false;
+  let crashed = false;
+  let score = 0;
+  let best = 0;
+
+  let tPrev = null;
+  let spawnTimer = 0;
+  let nextSpawn = rand(0.9, 1.6);
+
+  const player = {
+    x: Math.floor(W * 0.18),
+    y: groundY,
+    w: 42,
+    h: 52,
+    vy: 0,
+    onGround: true
+  };
+
+  let palms = [];
+  let sandOffset = 0;
+
+  function rand(a,b){ return a + Math.random()*(b-a); }
+
+  function reset(startRunning) {
+    player.y = groundY;
+    player.vy = 0;
+    player.onGround = true;
+
+    palms = [];
+    sandOffset = 0;
+
+    running = !!startRunning;
+    crashed = false;
+    score = 0;
+
+    spawnTimer = 0;
+    nextSpawn = rand(0.9, 1.6);
+  }
+
+  function startIfNeeded() {
+    if (!running && !crashed) running = true;
+    if (crashed) reset(true);
+  }
+
+  function jump() {
+    startIfNeeded();
+    if (crashed) return;
+    if (player.onGround) {
+      player.vy = jumpVel;
+      player.onGround = false;
+    }
+  }
+
+  // Input
+  canvas.addEventListener("pointerdown", (e) => { e.preventDefault(); jump(); }, { passive:false });
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "Space" || e.code === "ArrowUp") { e.preventDefault(); jump(); }
+  }, { passive:false });
+
+  // Prevent iOS double-tap zoom
+  let lastTouchEnd = 0;
+  document.addEventListener("touchend", function(e){
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive:false });
+
+  function spawnPalm() {
+    const trunkH = rand(H*0.18, H*0.28);
+    const frondR = rand(26, 34);
+    palms.push({
+      x: W + 60,
+      trunkH,
+      frondR,
+      passed: false
+    });
+  }
+
+  function playerRect() {
+    return {
+      x: player.x + 6,
+      y: player.y - player.h + 6,
+      w: player.w - 12,
+      h: player.h - 10
+    };
+  }
+
+  function palmRect(p) {
+    // collision around trunk + top
+    const trunkW = 18;
+    const topY = groundY - p.trunkH - p.frondR*0.7;
+    const pad = 6;
+    return {
+      x: p.x - trunkW/2 - pad,
+      y: topY - pad,
+      w: trunkW + pad*2,
+      h: (groundY - topY) + pad*2
+    };
+  }
+
+  function hit(a,b){
+    return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
+  }
+
+  function update(dt) {
+    // background motion
+    sandOffset = (sandOffset + dt * (baseSpeed*0.35)) % 80;
+
+    if (!running || crashed) return;
+
+    const speed = baseSpeed * (1 + score * speedRamp);
+
+    // player physics
+    player.vy += gravity * dt;
+    player.y += player.vy * dt;
+    if (player.y >= groundY) {
+      player.y = groundY;
+      player.vy = 0;
+      player.onGround = true;
+    }
+
+    // spawn palms
+    spawnTimer += dt;
+    if (spawnTimer >= nextSpawn) {
+      spawnTimer = 0;
+      nextSpawn = rand(0.9, 1.6);
+      spawnPalm();
+    }
+
+    // move palms, score, remove old
+    for (const p of palms) p.x -= speed * dt;
+
+    for (let i = palms.length - 1; i >= 0; i--) {
+      const p = palms[i];
+      if (!p.passed && p.x < player.x - 10) {
+        p.passed = true;
+        score += 10;
+        best = Math.max(best, score);
+      }
+      if (p.x < -120) palms.splice(i, 1);
+    }
+
+    // collision
+    const pr = playerRect();
+    for (const p of palms) {
+      if (hit(pr, palmRect(p))) {
+        crashed = true;
+        running = false;
+        best = Math.max(best, score);
+        break;
+      }
+    }
+  }
+
+  function drawPalm(p) {
+    ctx.save();
+    ctx.translate(p.x, groundY);
+
+    // shadow
+    ctx.fillStyle = "rgba(0,0,0,0.18)";
+    ctx.beginPath();
+    ctx.ellipse(10, 10, 26, 10, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // trunk
+    ctx.strokeStyle = "#8b5a2b";
+    ctx.lineWidth = 14;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, -p.trunkH);
+    ctx.stroke();
+
+    // fronds
+    ctx.translate(0, -p.trunkH);
+    for (let i = 0; i < 6; i++) {
+      const ang = (-Math.PI/2) + (i-2.5)*0.35;
+      ctx.strokeStyle = "#1f8a3b";
+      ctx.lineWidth = 6;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(
+        Math.cos(ang)*p.frondR*0.65,
+        Math.sin(ang)*p.frondR*0.65,
+        Math.cos(ang)*p.frondR,
+        Math.sin(ang)*p.frondR
+      );
+      ctx.stroke();
+    }
+
+    // coconuts
+    ctx.fillStyle = "#6b3f1f";
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.arc(10 + i*10, 8 + (i%2)*8, 7, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function drawPlayer() {
+    ctx.save();
+    ctx.translate(player.x, player.y);
+
+    // shadow
+    ctx.fillStyle = "rgba(0,0,0,0.22)";
+    ctx.beginPath();
+    ctx.ellipse(0, 10, 24, player.onGround ? 10 : 7, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // body
+    const bob = player.onGround ? Math.sin(performance.now()/80)*1.2 : 0;
+    ctx.translate(0, -player.h/2 + bob);
+
+    // torso
+    ctx.fillStyle = "#1b1b24";
+    roundRect(-18, -14, 36, 30, 10);
+    ctx.fill();
+
+    // head
+    ctx.fillStyle = "#ffd2b3";
+    ctx.beginPath();
+    ctx.arc(0, -24, 13, 0, Math.PI*2);
+    ctx.fill();
+
+    // eye
+    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.arc(4, -26, 2, 0, Math.PI*2);
+    ctx.fill();
+
+    // legs
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = 6;
+    ctx.lineCap = "round";
+    const phase = (performance.now()/90) % (Math.PI*2);
+    const a = player.onGround ? Math.sin(phase)*10 : 0;
+
+    ctx.beginPath(); ctx.moveTo(-6, 12); ctx.lineTo(-12, 24 + a); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo( 6, 12); ctx.lineTo( 12, 24 - a); ctx.stroke();
+
+    ctx.restore();
+
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+  }
+
+  function overlay(title, subtitle) {
+    ctx.fillStyle = "rgba(0,0,0,0.42)";
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.font = "700 40px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillText(title, W/2, H*0.46);
+
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.font = "500 18px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillText(subtitle, W/2, H*0.54);
+
+    ctx.textAlign = "start";
+  }
+
+  function draw() {
+    // sky gradient
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#79c8ff");
+    g.addColorStop(1, "#d7f3ff");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // sun
+    ctx.fillStyle = "rgba(255, 237, 170, 0.95)";
+    ctx.beginPath();
+    ctx.arc(W*0.86, H*0.18, 34, 0, Math.PI*2);
+    ctx.fill();
+
+    // ocean strip
+    ctx.fillStyle = "rgba(40, 140, 200, 0.35)";
+    ctx.fillRect(0, groundY - H*0.10, W, H*0.06);
+
+    // sand
+    ctx.fillStyle = "#f4d29b";
+    ctx.fillRect(0, groundY, W, H - groundY);
+
+    // sand lines
+    ctx.strokeStyle = "rgba(160, 112, 60, 0.22)";
+    ctx.lineWidth = 2;
+    for (let x = -80; x < W+80; x += 80) {
+      const xx = x - sandOffset;
+      ctx.beginPath();
+      ctx.moveTo(xx, groundY + 18);
+      ctx.quadraticCurveTo(xx + 30, groundY + 10, xx + 60, groundY + 22);
+      ctx.stroke();
+    }
+
+    // palms
+    for (const p of palms) drawPalm(p);
+
+    // player
+    drawPlayer();
+
+    // HUD
+    ctx.fillStyle = "rgba(0,0,0,0.40)";
+    ctx.fillRect(14, 14, 230, 72);
+    ctx.fillStyle = "white";
+    ctx.font = "600 18px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillText("Jump Palm Tree", 26, 40);
+    ctx.font = "500 16px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillText("Score: " + score, 26, 62);
+    ctx.fillText("Best:  " + best, 140, 62);
+
+    if (!running && !crashed && score === 0) overlay("Tap to Start", "Tap to jump. Don’t bump into palm trees.");
+    if (crashed) overlay("Ouch! You hit a palm tree.", "Tap to restart.");
+  }
+
+  function loop(ts) {
+    if (tPrev === null) tPrev = ts;
+    const dt = Math.min(0.033, (ts - tPrev) / 1000);
+    tPrev = ts;
+
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // start
+  reset(false);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
+z
