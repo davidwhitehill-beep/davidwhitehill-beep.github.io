@@ -1,0 +1,15 @@
+{
+  "name": "edge-pattern-language",
+  "version": "1.0.0",
+  "description": "A small server-backed pattern atlas inspired by Christopher Alexander's A Pattern Language.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
