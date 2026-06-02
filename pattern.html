@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Edge Pattern Language</title>
+<style>
+  body{
+    margin:0;
+    background:#e8e2d2;
+    color:#171717;
+    font-family: Georgia, "Times New Roman", serif;
+  }
+
+  header{
+    text-align:center;
+    padding:48px 20px 28px;
+    letter-spacing:.18em;
+  }
+
+  header h1{
+    font-size:42px;
+    font-weight:400;
+    line-height:1.25;
+    margin:0;
+  }
+
+  header p{
+    font-size:14px;
+    text-transform:uppercase;
+    letter-spacing:.28em;
+  }
+
+  main{
+    display:grid;
+    grid-template-columns:360px 1fr;
+    gap:28px;
+    padding:24px;
+  }
+
+  section{
+    background:#fbfaf4;
+    padding:28px;
+    border:1px solid #c9c1ad;
+    box-shadow:0 8px 24px #0002;
+  }
+
+  h2{
+    text-align:center;
+    font-size:16px;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    font-weight:400;
+  }
+
+  label{
+    display:block;
+    margin-top:14px;
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+  }
+
+  input, textarea, select{
+    width:100%;
+    box-sizing:border-box;
+    margin-top:5px;
+    padding:8px;
+    border:1px solid #aaa;
+    background:#fffdf7;
+    font-family:Georgia, serif;
+  }
+
+  textarea{min-height:68px;}
+
+  button{
+    margin-top:16px;
+    padding:9px 14px;
+    border:1px solid #222;
+    background:#fbfaf4;
+    color:#111;
+    font-family:Georgia, serif;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    cursor:pointer;
+  }
+
+  button:hover{background:#222;color:white;}
+
+  .tabs{text-align:center;margin-bottom:24px;}
+  .tabs button.active{background:#222;color:white;}
+
+  .pattern{
+    max-width:620px;
+    margin:0 auto 56px;
+    padding-bottom:40px;
+    border-bottom:1px solid #bbb;
+  }
+
+  .pattern-number{
+    text-align:center;
+    font-size:14px;
+    letter-spacing:.18em;
+    margin-bottom:10px;
+  }
+
+  .pattern h3{
+    text-align:center;
+    font-size:22px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    font-weight:400;
+    margin:0 0 18px;
+  }
+
+  .image-box{
+    height:180px;
+    border:1px solid #999;
+    background:
+      linear-gradient(135deg,#eee,#fafafa);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-style:italic;
+    color:#777;
+    margin:18px 0;
+  }
+
+  .intro{
+    font-style:italic;
+    font-size:18px;
+    line-height:1.55;
+    text-align:center;
+    margin:24px 0;
+  }
+
+  .diamonds{
+    text-align:center;
+    letter-spacing:.6em;
+    margin:24px 0;
+  }
+
+  .problem{
+    font-weight:bold;
+    font-size:17px;
+    line-height:1.55;
+  }
+
+  .bodytext{
+    font-size:16px;
+    line-height:1.65;
+  }
+
+  .solution{
+    font-weight:bold;
+    font-size:17px;
+    line-height:1.6;
+    margin-top:22px;
+  }
+
+  .meta{
+    text-align:center;
+    font-size:12px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:#555;
+  }
+
+  .tag{
+    display:inline-block;
+    font-size:11px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    border:1px solid #aaa;
+    padding:3px 7px;
+    margin:3px;
+  }
+
+  #network{
+    width:100%;
+    height:620px;
+    border:1px solid #aaa;
+    background:#fbfaf4;
+  }
+
+  .hidden{display:none;}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>EDGE<br>PATTERN<br>LANGUAGE</h1>
+  <p>Temporary Towns • Rituals • Social Forms</p>
+</header>
+
+<main>
+<section>
+  <h2>Add Pattern</h2>
+
+  <form id="patternForm">
+    <label>Pattern Name</label>
+    <input id="title" required />
+
+    <label>Introductory Passage</label>
+    <textarea id="summary"></textarea>
+
+    <label>Category</label>
+    <select id="category">
+      <option>Spatial Pattern</option>
+      <option>Temporal Pattern</option>
+      <option>Social Pattern</option>
+      <option>Governance Pattern</option>
+      <option>Ritual Pattern</option>
+      <option>Technology Pattern</option>
+      <option>Children’s Town Pattern</option>
+      <option>Anti-Pattern</option>
+    </select>
+
+    <label>Confidence</label>
+    <select id="status">
+      <option>Seed</option>
+      <option>Emerging</option>
+      <option>Strong</option>
+      <option>Mature</option>
+    </select>
+
+    <label>Problem</label>
+    <textarea id="problem"></textarea>
+
+    <label>Forces / Observations</label>
+    <textarea id="forces"></textarea>
+
+    <label>Evidence</label>
+    <textarea id="evidence"></textarea>
+
+    <label>Solution</label>
+    <textarea id="solution"></textarea>
+
+    <label>Examples</label>
+    <textarea id="examples"></textarea>
+
+    <label>Tags</label>
+    <input id="tags" placeholder="meals, arrival, belonging" />
+
+    <label>Related Patterns</label>
+    <input id="related" placeholder="Soft Arrival Zone, Productive Drift" />
+
+    <button type="submit">Save Pattern</button>
+  </form>
+</section>
+
+<section>
+  <div class="tabs">
+    <button id="linearTab" class="active">Sequence</button>
+    <button id="networkTab">Network</button>
+    <button id="clearData">Clear</button>
+  </div>
+
+  <div id="linearView"></div>
+
+  <div id="networkView" class="hidden">
+    <h2>Base Map of the Language</h2>
+    <svg id="network"></svg>
+  </div>
+</section>
+</main>
+
+<script>
+const STORAGE_KEY = "edge-pattern-language";
+
+let patterns = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
+  {
+    title:"The Long Lunch Table",
+    summary:"Within a temporary village, the meal is not merely a pause in the day, but one of the chief instruments by which strangers become citizens.",
+    category:"Social Pattern",
+    status:"Emerging",
+    problem:"When people arrive with different affiliations, they tend to cluster with those they already know.",
+    forces:"People want novelty, but also safety. Meals create intimacy, but can harden into cliques.",
+    evidence:"Observed at shared meals, outdoor tables, and informal lunch gatherings.",
+    solution:"Make long, visible, partly open tables where people can join without invitation and leave without ceremony.",
+    examples:"Breakfast tables, communal dinners, shaded outdoor lunches.",
+    tags:["meals","belonging","serendipity"],
+    related:["Soft Arrival Zone","Productive Drift"]
+  },
+  {
+    title:"Soft Arrival Zone",
+    summary:"A person entering the village needs a place to pause before joining the flow of the community.",
+    category:"Spatial Pattern",
+    status:"Seed",
+    problem:"Arrival into a dense social field can feel abrupt, exposed, and awkward.",
+    forces:"Visibility is useful for orientation, but too much visibility creates vulnerability.",
+    evidence:"Entry tables, porches, shaded benches, coffee stations.",
+    solution:"Create a gentle threshold where newcomers may watch, rest, and enter gradually.",
+    examples:"Porch, welcome table, café edge, shaded bench.",
+    tags:["arrival","threshold","comfort"],
+    related:["The Long Lunch Table"]
+  }
+];
+
+function save(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(patterns));
+}
+
+function renderLinear(){
+  const container = document.getElementById("linearView");
+  container.innerHTML = "<h2>Summary of the Language</h2>";
+
+  patterns.forEach((p, index) => {
+    const div = document.createElement("div");
+    div.className = "pattern";
+    div.innerHTML = `
+      <div class="pattern-number">${index + 1}</div>
+      <h3>${p.title}</h3>
+      <div class="meta">${p.category} · ${p.status}</div>
+
+      <div class="image-box">image / sketch / diagram</div>
+
+      <div class="intro">${p.summary || ""}</div>
+
+      <div class="diamonds">◆ ◆ ◆</div>
+
+      <p class="problem">${p.problem || ""}</p>
+
+      <p class="bodytext">${p.forces || ""}</p>
+      <p class="bodytext"><strong>Evidence.</strong> ${p.evidence || ""}</p>
+      <p class="bodytext"><strong>Examples.</strong> ${p.examples || ""}</p>
+
+      <div class="diamonds">◆ ◆ ◆</div>
+
+      <p class="solution">${p.solution || ""}</p>
+
+      <p class="bodytext"><strong>Related patterns:</strong> ${(p.related || []).join(", ")}</p>
+      <div>${(p.tags || []).map(t => `<span class="tag">${t}</span>`).join("")}</div>
+
+      <button onclick="deletePattern(${index})">Delete</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function deletePattern(index){
+  patterns.splice(index,1);
+  save();
+  renderLinear();
+  renderNetwork();
+}
+
+document.getElementById("patternForm").addEventListener("submit", function(e){
+  e.preventDefault();
+
+  patterns.push({
+    title:title.value.trim(),
+    summary:summary.value.trim(),
+    category:category.value,
+    status:status.value,
+    problem:problem.value.trim(),
+    forces:forces.value.trim(),
+    evidence:evidence.value.trim(),
+    solution:solution.value.trim(),
+    examples:examples.value.trim(),
+    tags:tags.value.split(",").map(x=>x.trim()).filter(Boolean),
+    related:related.value.split(",").map(x=>x.trim()).filter(Boolean)
+  });
+
+  save();
+  this.reset();
+  renderLinear();
+  renderNetwork();
+});
+
+linearTab.onclick = () => {
+  linearTab.classList.add("active");
+  networkTab.classList.remove("active");
+  linearView.classList.remove("hidden");
+  networkView.classList.add("hidden");
+};
+
+networkTab.onclick = () => {
+  networkTab.classList.add("active");
+  linearTab.classList.remove("active");
+  networkView.classList.remove("hidden");
+  linearView.classList.add("hidden");
+  renderNetwork();
+};
+
+clearData.onclick = () => {
+  if(confirm("Clear all saved patterns?")){
+    patterns = [];
+    save();
+    renderLinear();
+    renderNetwork();
+  }
+};
+
+function renderNetwork(){
+  const svg = document.getElementById("network");
+  svg.innerHTML = "";
+
+  const width = svg.clientWidth;
+  const height = svg.clientHeight;
+  const cx = width/2;
+  const cy = height/2;
+  const radius = Math.min(width,height) * .35;
+
+  const nodes = patterns.map((p,i)=>({
+    ...p,
+    x: cx + radius * Math.cos((i/patterns.length)*Math.PI*2),
+    y: cy + radius * Math.sin((i/patterns.length)*Math.PI*2)
+  }));
+
+  const byTitle = Object.fromEntries(nodes.map(n=>[n.title.toLowerCase(),n]));
+
+  nodes.forEach(n=>{
+    (n.related || []).forEach(r=>{
+      const target = byTitle[r.toLowerCase()];
+      if(target){
+        const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+        line.setAttribute("x1",n.x);
+        line.setAttribute("y1",n.y);
+        line.setAttribute("x2",target.x);
+        line.setAttribute("y2",target.y);
+        line.setAttribute("stroke","#777");
+        line.setAttribute("stroke-width","1");
+        svg.appendChild(line);
+      }
+    });
+  });
+
+  nodes.forEach((n,i)=>{
+    const g = document.createElementNS("http://www.w3.org/2000/svg","g");
+
+    const circle = document.createElementNS("http://www.w3.org/2000/svg","circle");
+    circle.setAttribute("cx",n.x);
+    circle.setAttribute("cy",n.y);
+    circle.setAttribute("r",26);
+    circle.setAttribute("fill",n.category === "Anti-Pattern" ? "#d8d0bf" : "#171717");
+
+    const number = document.createElementNS("http://www.w3.org/2000/svg","text");
+    number.setAttribute("x",n.x);
+    number.setAttribute("y",n.y + 5);
+    number.setAttribute("text-anchor","middle");
+    number.setAttribute("fill","white");
+    number.setAttribute("font-size","14");
+    number.textContent = i + 1;
+
+    const label = document.createElementNS("http://www.w3.org/2000/svg","text");
+    label.setAttribute("x",n.x);
+    label.setAttribute("y",n.y + 48);
+    label.setAttribute("text-anchor","middle");
+    label.setAttribute("font-size","11");
+    label.setAttribute("letter-spacing","2");
+    label.textContent = n.title.toUpperCase();
+
+    const tip = document.createElementNS("http://www.w3.org/2000/svg","title");
+    tip.textContent = `${n.title}\n${n.summary}`;
+
+    g.appendChild(circle);
+    g.appendChild(number);
+    g.appendChild(label);
+    g.appendChild(tip);
+    svg.appendChild(g);
+  });
+}
+
+renderLinear();
+renderNetwork();
+</script>
+</body>
+</html>
